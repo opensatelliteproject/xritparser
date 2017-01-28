@@ -2,19 +2,8 @@
 import os, struct, datetime
 
 '''
-  File Type Codes:
-  0 - Image
-  2 - Text
-  130 - DCS Data
+  Known product / subproducts IDs from NOAA
 '''
-'''
-  Compression Types:
-  0 = Not Compressed
-  1 = LRIT RICE
-  2 = JPG
-  5 = GIF
-'''
-
 NOAA_PRODUCT_ID = {
   1: {
     "name": "NOAA Text",
@@ -52,25 +41,70 @@ NOAA_PRODUCT_ID = {
   13: {
     "name": "Scanner Image",
     "sub": {
-       1: "Full Disk Infrared",
-       2: "Region Infrared",
-       5: "Area of Interest Infrared",
-      11: "Full Disk Visible",
-      12: "Region Visible",
-      15: "Area of Interest Visible",
-      21: "Full Disk Water Vapour",
-      22: "Region Water Vapour",
-      25: "Area of Interest Water Vapour"
+       1: "Infrared Full Disk",
+       2: "Infrared Northern Hemisphere",
+       3: "Infrared Southern Hemisphere",
+       4: "Infrared United States",
+       5: "Infrared Area of Interest",
+      11: "Visible Full Disk",
+      12: "Visible Northern Hemisphere",
+      13: "Visible Southern Hemisphere",
+      14: "Visible United States",
+      15: "Visible Area of Interest",
+      21: "Water Vapour Full Disk",
+      22: "Water Vapour Northern Hemisphere",
+      23: "Water Vapour Southern Hemisphere",
+      24: "Water Vapour United States",
+      25: "Water Vapour Area of Interest"
+    }
+  },
+  15: {
+    "name": "Scanner Image",
+    "sub": {
+       1: "Infrared Full Disk",
+       2: "Infrared Northern Hemisphere",
+       3: "Infrared Southern Hemisphere",
+       4: "Infrared United States",
+       5: "Infrared Area of Interest",
+      11: "Visible Full Disk",
+      12: "Visible Northern Hemisphere",
+      13: "Visible Southern Hemisphere",
+      14: "Visible United States",
+      15: "Visible Area of Interest",
+      21: "Water Vapour Full Disk",
+      22: "Water Vapour Northern Hemisphere",
+      23: "Water Vapour Southern Hemisphere",
+      24: "Water Vapour United States",
+      25: "Water Vapour Area of Interest"
+    }
+  },
+  42: {
+    "name": "EMWIN",
+    "sub": {
+      0: "None"
     }
   }
 }
 
+'''
+  Known File Type Codes
+'''
+
 FILE_TYPE_CODE_NAME = {
   0: "Image",
+  1: "Messages",
   2: "Text",
-  130: "DCS"
+  3: "Encryption Key",
+  4: "Reserved (4)",
+
+  128: "Meteorological Data",
+  130: "DCS",
+  214: "EMWIN"
 }
 
+'''
+  Known Compression Types
+'''
 COMPRESSION_TYPE_NAME = {
   0: "Not Compressed",
   1: "LRIT Rice",
@@ -78,9 +112,15 @@ COMPRESSION_TYPE_NAME = {
   5: "GIF"
 }
 
+'''
+  Base date for calcuting timestamps
+'''
 baseDate = datetime.datetime(1958, 1, 1)
 
 def parseFile(filename, showStructuredHeader=False, showImageDataRecord=False):
+  '''
+    Parses a lrit/hrit file and prints the human readable headers
+  '''
   f = open(filename, "rb")
 
   try:
@@ -96,6 +136,9 @@ def parseFile(filename, showStructuredHeader=False, showImageDataRecord=False):
   f.close()
 
 def dumpData(filename, output):
+  '''
+    Reads lrit/hrit file "filename" and writes the data section to file "output"
+  '''
   f = open(filename, "rb")
 
   try:
@@ -122,6 +165,9 @@ def dumpData(filename, output):
   o.close()
 
 def loadData(filename):
+  '''
+    Reads an lrit/hrit file and returns the data section content
+  '''
   f = open(filename, "rb")
 
   try:
@@ -136,6 +182,9 @@ def loadData(filename):
   return data
 
 def manageFile(filename):
+  '''
+    Reads a lrit/hrit file and renames itself to the filename specified in the header
+  '''
   f = open(filename, "rb")
 
   try:
@@ -159,6 +208,9 @@ def manageFile(filename):
     print("   Couldn't find name in %s" %filename)
 
 def getHeaderData(data):
+  '''
+    Interprets the buffer "data" as a lrit/hrit header chain
+  '''
   headers = []
   while len(data) > 0:
     type = ord(data[0])
@@ -172,6 +224,9 @@ def getHeaderData(data):
   return headers
 
 def parseHeader(type, data):
+  '''
+    Parses the binary "data" as a header defined by "type" and returns a python object
+  '''
   if type == 0:
     filetypecode, headerlength, datalength = struct.unpack(">BIQ", data)
     return {"type":type, "filetypecode":filetypecode, "headerlength":headerlength, "datalength":datalength}
@@ -220,6 +275,9 @@ def parseHeader(type, data):
     return {"type":type}
 
 def readHeader(f):
+  '''
+    Reads a reader from file and returns a tuple with its values
+  '''
   global t
   type = ord(f.read(1))
   size = f.read(2)
@@ -275,6 +333,9 @@ def readHeader(f):
     return type
 
 def printHeaders(headers, showStructuredHeader=False, showImageDataRecord=False):
+  '''
+    Prints a list of python object parsed headers in a Human Readable Format
+  '''
   for head in headers:
     type = head["type"]
     if type == 0:

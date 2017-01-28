@@ -26,14 +26,14 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='1.0.1',
+    version='1.0.2',
 
     description='xRIT Parser',
     long_description=read_md('README.md'),
 
     # The project's main homepage.
     url='https://github.com/opensatelliteproject/xritparser',
-    download_url = 'https://github.com/opensatelliteproject/xritparser/tarball/1.0.1',
+    download_url = 'https://github.com/opensatelliteproject/xritparser/tarball/1.0.2',
 
     # Author details
     author='OpenSatelliteProject',
@@ -48,7 +48,7 @@ setup(
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
 
         # Indicate who your project is intended for
         'Intended Audience :: Developers',
@@ -59,7 +59,6 @@ setup(
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
