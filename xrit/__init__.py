@@ -61,3 +61,20 @@ def catExecutable():
   else:
     filename = sys.argv[1]
     sys.stdout.write(loadData(filename))
+
+def printDCS():
+  argc = len(sys.argv) -1
+  if argc != 1:
+    print("xRIT DCS Print")
+    print("   * This program prints the DCS Transmission header from a DCS File")
+    __printDisclaimer()
+    print("Usage: ")
+    print("   xritpdcs filename.lrit")
+  else:
+    filename = sys.argv[1]
+    data = loadData(filename)
+    h, t = parseDCS(data)
+    print("Header: %s" %h)
+    print(" Address       Date / Time      Status  Signal  Frequency Offset  MIN  DQN  Channel  Source  ")
+    for i in t:
+      print(" %8s  %19s    %1s     %2s dB          %2s          %1s    %1s    %4s      %2s    " % (i["address"], i["datetime"], i["status"], i["signal"], i["frequencyoffset"], i["modindexnormal"], i["dataqualnominal"], i["channel"], i["sourcecode"]))
