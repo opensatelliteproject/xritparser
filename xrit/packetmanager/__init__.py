@@ -442,3 +442,38 @@ def printHeaders(headers, showStructuredHeader=False, showImageDataRecord=False)
     else:
       print("Type not mapped: %s" % type)
     print("")
+
+def parseDCSHeader(header):
+  address = header[:8]
+  dt = header[9:20]
+  status = chr(header[20]) if isinstance(header[20], (int)) else header[20]
+  signal = header[21:23]
+  frequencyoffset = header[23:25]
+  modindexnormal = chr(header[25]) if isinstance(header[25], (int)) else header[20]
+  dataqualnominal = chr(header[26]) if isinstance(header[26], (int)) else header[20]
+  channel = header[27:31]
+  sourcecode = header[31:33]
+  return {
+    "address": address.decode("utf-8"),
+    "datetime": datetime.datetime.strptime(dt.decode("utf-8"), "%y%j%H%M%S"),
+    "status": status,
+    "signal": signal.decode("utf-8"),
+    "frequencyoffset": frequencyoffset.decode("utf-8"),
+    "modindexnormal": modindexnormal,
+    "dataqualnominal": dataqualnominal,
+    "channel": channel.decode("utf-8"),
+    "sourcecode": sourcecode.decode("utf-8")
+  }
+
+def parseDCS(data):
+  baseHeader = data[:64]
+  data = data[64:]
+  dcs = filter(None, data.split(b"\x02\x02\x18")) # Frame Marker
+  d = []
+  for i in dcs:
+    dh = i[:33]
+    dk = parseDCSHeader(dh)
+    dk["data"] = i[33:]
+    d.append(dk)
+
+  return baseHeader, d
