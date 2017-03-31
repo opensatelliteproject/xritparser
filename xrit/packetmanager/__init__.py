@@ -38,8 +38,14 @@ NOAA_PRODUCT_ID = {
       0: "None"
     }
   },
+  9: {
+    "name": "HRIT EMWIN TEXT (?)",
+    "sub": {
+      0: "None"
+    }
+  },
   13: {
-    "name": "Scanner Image",
+    "name": "GOES 13 ABI",
     "sub": {
        1: "Infrared Full Disk",
        2: "Infrared Northern Hemisphere",
@@ -59,7 +65,7 @@ NOAA_PRODUCT_ID = {
     }
   },
   15: {
-    "name": "Scanner Image",
+    "name": "GOES 15 ABI",
     "sub": {
        1: "Infrared Full Disk",
        2: "Infrared Northern Hemisphere",
@@ -76,6 +82,28 @@ NOAA_PRODUCT_ID = {
       23: "Water Vapour Southern Hemisphere",
       24: "Water Vapour United States",
       25: "Water Vapour Area of Interest"
+    }
+  },
+  16: {
+    "name": "GOES 16 ABI",
+    "sub": {
+      0: "None",
+      1: "Channel 1",
+      2: "Channel 2",
+      3: "Channel 3",
+      4: "Channel 4",
+      5: "Channel 5",
+      6: "Channel 6",
+      7: "Channel 7",
+      8: "Channel 8",
+      9: "Channel 9",
+      10: "Channel 10",
+      11: "Channel 11",
+      12: "Channel 12",
+      13: "Channel 13",
+      14: "Channel 14",
+      15: "Channel 15",
+      16: "Channel 16",
     }
   },
   42: {
@@ -109,7 +137,8 @@ COMPRESSION_TYPE_NAME = {
   0: "Not Compressed",
   1: "LRIT Rice",
   2: "JPEG",
-  5: "GIF"
+  5: "GIF",
+  10: "ZIP"
 }
 
 '''
