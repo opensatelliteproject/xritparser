@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os, struct, datetime
+from PIL import Image
 
 '''
   Known product / subproducts IDs from NOAA
@@ -38,8 +39,14 @@ NOAA_PRODUCT_ID = {
       0: "None"
     }
   },
+  9: {
+    "name": "HRIT EMWIN TEXT (?)",
+    "sub": {
+      0: "None"
+    }
+  },
   13: {
-    "name": "Scanner Image",
+    "name": "GOES 13 ABI",
     "sub": {
        1: "Infrared Full Disk",
        2: "Infrared Northern Hemisphere",
@@ -59,7 +66,7 @@ NOAA_PRODUCT_ID = {
     }
   },
   15: {
-    "name": "Scanner Image",
+    "name": "GOES 15 ABI",
     "sub": {
        1: "Infrared Full Disk",
        2: "Infrared Northern Hemisphere",
@@ -78,10 +85,54 @@ NOAA_PRODUCT_ID = {
       25: "Water Vapour Area of Interest"
     }
   },
+  16: {
+    "name": "GOES 16 ABI",
+    "sub": {
+      0: "None",
+      1: "Channel 1",
+      2: "Channel 2",
+      3: "Channel 3",
+      4: "Channel 4",
+      5: "Channel 5",
+      6: "Channel 6",
+      7: "Channel 7",
+      8: "Channel 8",
+      9: "Channel 9",
+      10: "Channel 10",
+      11: "Channel 11",
+      12: "Channel 12",
+      13: "Channel 13",
+      14: "Channel 14",
+      15: "Channel 15",
+      16: "Channel 16",
+    }
+  },
   42: {
     "name": "EMWIN",
     "sub": {
       0: "None"
+    }
+  },
+  43: {
+    "name": "HIMAWARI8 ABI",
+    "sub": {
+      0: "None",
+      1: "Channel 1",
+      2: "Channel 2",
+      3: "Channel 3",
+      4: "Channel 4",
+      5: "Channel 5",
+      6: "Channel 6",
+      7: "Channel 7",
+      8: "Channel 8",
+      9: "Channel 9",
+      10: "Channel 10",
+      11: "Channel 11",
+      12: "Channel 12",
+      13: "Channel 13",
+      14: "Channel 14",
+      15: "Channel 15",
+      16: "Channel 16",
     }
   }
 }
@@ -109,13 +160,17 @@ COMPRESSION_TYPE_NAME = {
   0: "Not Compressed",
   1: "LRIT Rice",
   2: "JPEG",
-  5: "GIF"
+  5: "GIF",
+  10: "ZIP"
 }
 
 '''
   Base date for calcuting timestamps
 '''
 baseDate = datetime.datetime(1958, 1, 1)
+
+def binary(num, length=8):
+  return format(num, '#0{}b'.format(length + 2))
 
 def parseFile(filename, showStructuredHeader=False, showImageDataRecord=False):
   '''
@@ -213,7 +268,7 @@ def getHeaderData(data):
   '''
   headers = []
   while len(data) > 0:
-    type = ord(data[0])
+    type = data[0] if isinstance(data[0], int) else ord(data[0])
     size = struct.unpack(">H", data[1:3])[0]
     o = data[3:size]
     data = data[size:]
@@ -477,3 +532,86 @@ def parseDCS(data):
     d.append(dk)
 
   return baseHeader, d
+
+def dumpImage(filename):
+  f = open(filename, "rb")
+  try:
+    k = readHeader(f)
+    type, filetypecode, headerlength, datalength = k
+  except:
+    print("   Header 0 is corrupted for file %s" %filename)
+    f.close()
+    return
+
+  if filetypecode != 0:
+    print("The file %s is not an image container." %filename)
+    f.close()
+    return
+
+  f.seek(0, 0)
+
+  hdata = f.read(headerlength)
+  headers = getHeaderData(hdata)
+
+  data = f.read()
+
+  f.close()
+
+  compression = -1
+
+  for i in headers:
+    if i["type"] == 0:
+      fileoffset = i["headerlength"]
+      datasize = i["datalength"]
+    if i["type"] == 1:
+      imagedata = i
+      if compression < i["compression"]:
+        compression = i["compression"]
+    elif i["type"] == 2:
+      projdata = i
+    elif i["type"] == 128:
+      posdata = i
+    elif i["type"] == 129:
+      if compression < i["compression"]:
+        compression = i["compression"]
+
+  if compression == 2:
+    outfilename = filename.replace(".lrit", ".jpg")
+    print("JPEG Image, dumping to %s" %outfilename)
+    f = open(outfilename, "wb")
+    f.write(data)
+    f.close()
+  elif compression == 5:
+    outfilename = filename.replace(".lrit", ".gif")
+    print("GIF Image, dumping to %s" %outfilename)
+    f = open(outfilename, "wb")
+    f.write(data)
+    f.close()
+  elif compression == 1 or compression == 0:
+    outfilename = filename.replace(".lrit", ".jpg")
+    print("Decompressed image. Saving to %s" %outfilename)
+    if imagedata["bitsperpixel"] == 8:
+      im = Image.frombuffer("L", (imagedata["columns"], imagedata["lines"]), data, 'raw', "L", 0, 1)
+      im.save(outfilename)
+    elif imagedata["bitsperpixel"] == 1:
+      if imagedata["columns"] % 8 != 0:
+        im = Image.new("1", (imagedata["columns"], imagedata["lines"]))
+        arr = im.load()
+        x = 0
+        y = 0
+        for i in data:
+          t = binary(i) if isinstance(i, int) else binary(ord(i))
+          for z in range(8):
+            arr[x, y] = 1 if t[z] == "1" else 0
+            x+=1
+            if x == imagedata["columns"]:
+              x = 0
+              y+= 1
+            if y == imagedata["lines"]:
+              break
+      else:
+        im = Image.frombuffer("1", (imagedata["columns"], imagedata["lines"]), data, 'raw', "1", 0, 1)
+
+      im.save(outfilename)
+    else:
+      print("BPP not supported: %s" %imagedata["bitsperpixel"])
