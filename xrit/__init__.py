@@ -78,3 +78,18 @@ def printDCS():
     print(" Address       Date / Time      Status  Signal  Frequency Offset  MIN  DQN  Channel  Source  ")
     for i in t:
       print(" %8s  %19s    %1s     %2s dB          %2s          %1s    %1s    %4s      %2s    " % (i["address"], i["datetime"], i["status"], i["signal"], i["frequencyoffset"], i["modindexnormal"], i["dataqualnominal"], i["channel"], i["sourcecode"]))
+
+def binary(num, length=8):
+  return format(num, '#0{}b'.format(length + 2))
+
+def dumpImageFile():
+  argc = len(sys.argv) -1
+  if argc == 0:
+    print("xRIT Dump Image")
+    print("   * This program dumps an image file from LRIT")
+    __printDisclaimer()
+    print("Usage: ")
+    print("   xritimg filename.lrit [filename2.lrit] ...")
+  else:
+    for i in range(argc):
+      dumpImage(sys.argv[i+1])

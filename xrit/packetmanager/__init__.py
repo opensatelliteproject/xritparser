@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os, struct, datetime
+from PIL import Image
 
 '''
   Known product / subproducts IDs from NOAA
@@ -168,6 +169,9 @@ COMPRESSION_TYPE_NAME = {
 '''
 baseDate = datetime.datetime(1958, 1, 1)
 
+def binary(num, length=8):
+  return format(num, '#0{}b'.format(length + 2))
+
 def parseFile(filename, showStructuredHeader=False, showImageDataRecord=False):
   '''
     Parses a lrit/hrit file and prints the human readable headers
@@ -264,7 +268,7 @@ def getHeaderData(data):
   '''
   headers = []
   while len(data) > 0:
-    type = ord(data[0])
+    type = data[0] if isinstance(data[0], int) else ord(data[0])
     size = struct.unpack(">H", data[1:3])[0]
     o = data[3:size]
     data = data[size:]
@@ -528,3 +532,86 @@ def parseDCS(data):
     d.append(dk)
 
   return baseHeader, d
+
+def dumpImage(filename):
+  f = open(filename, "rb")
+  try:
+    k = readHeader(f)
+    type, filetypecode, headerlength, datalength = k
+  except:
+    print("   Header 0 is corrupted for file %s" %filename)
+    f.close()
+    return
+
+  if filetypecode != 0:
+    print("The file %s is not an image container." %filename)
+    f.close()
+    return
+
+  f.seek(0, 0)
+
+  hdata = f.read(headerlength)
+  headers = getHeaderData(hdata)
+
+  data = f.read()
+
+  f.close()
+
+  compression = -1
+
+  for i in headers:
+    if i["type"] == 0:
+      fileoffset = i["headerlength"]
+      datasize = i["datalength"]
+    if i["type"] == 1:
+      imagedata = i
+      if compression < i["compression"]:
+        compression = i["compression"]
+    elif i["type"] == 2:
+      projdata = i
+    elif i["type"] == 128:
+      posdata = i
+    elif i["type"] == 129:
+      if compression < i["compression"]:
+        compression = i["compression"]
+
+  if compression == 2:
+    outfilename = filename.replace(".lrit", ".jpg")
+    print("JPEG Image, dumping to %s" %outfilename)
+    f = open(outfilename, "wb")
+    f.write(data)
+    f.close()
+  elif compression == 5:
+    outfilename = filename.replace(".lrit", ".gif")
+    print("GIF Image, dumping to %s" %outfilename)
+    f = open(outfilename, "wb")
+    f.write(data)
+    f.close()
+  elif compression == 1 or compression == 0:
+    outfilename = filename.replace(".lrit", ".jpg")
+    print("Decompressed image. Saving to %s" %outfilename)
+    if imagedata["bitsperpixel"] == 8:
+      im = Image.frombuffer("L", (imagedata["columns"], imagedata["lines"]), data, 'raw', "L", 0, 1)
+      im.save(outfilename)
+    elif imagedata["bitsperpixel"] == 1:
+      if imagedata["columns"] % 8 != 0:
+        im = Image.new("1", (imagedata["columns"], imagedata["lines"]))
+        arr = im.load()
+        x = 0
+        y = 0
+        for i in data:
+          t = binary(i) if isinstance(i, int) else binary(ord(i))
+          for z in range(8):
+            arr[x, y] = 1 if t[z] == "1" else 0
+            x+=1
+            if x == imagedata["columns"]:
+              x = 0
+              y+= 1
+            if y == imagedata["lines"]:
+              break
+      else:
+        im = Image.frombuffer("1", (imagedata["columns"], imagedata["lines"]), data, 'raw', "1", 0, 1)
+
+      im.save(outfilename)
+    else:
+      print("BPP not supported: %s" %imagedata["bitsperpixel"])
