@@ -111,6 +111,28 @@ NOAA_PRODUCT_ID = {
     "sub": {
       0: "None"
     }
+  },
+  43: {
+    "name": "HIMAWARI8 ABI",
+    "sub": {
+      0: "None",
+      1: "Channel 1",
+      2: "Channel 2",
+      3: "Channel 3",
+      4: "Channel 4",
+      5: "Channel 5",
+      6: "Channel 6",
+      7: "Channel 7",
+      8: "Channel 8",
+      9: "Channel 9",
+      10: "Channel 10",
+      11: "Channel 11",
+      12: "Channel 12",
+      13: "Channel 13",
+      14: "Channel 14",
+      15: "Channel 15",
+      16: "Channel 16",
+    }
   }
 }
 
