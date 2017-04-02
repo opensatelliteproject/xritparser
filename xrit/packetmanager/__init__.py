@@ -591,6 +591,10 @@ def dumpImage(filename):
     outfilename = filename.replace(".lrit", ".jpg")
     print("Decompressed image. Saving to %s" %outfilename)
     if imagedata["bitsperpixel"] == 8:
+      if len(data) < imagedata["columns"] * imagedata["lines"]:
+        msbytes = (imagedata["columns"] * imagedata["lines"]) - len(data)
+        print("Missing %s bytes on image." %msbytes)
+        data += "\x00" * msbytes
       im = Image.frombuffer("L", (imagedata["columns"], imagedata["lines"]), data, 'raw', "L", 0, 1)
       im.save(outfilename)
     elif imagedata["bitsperpixel"] == 1:
