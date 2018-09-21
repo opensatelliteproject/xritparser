@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os, struct, datetime
 from PIL import Image
+import binascii
 
 '''
   Known product / subproducts IDs from NOAA
@@ -87,6 +88,28 @@ NOAA_PRODUCT_ID = {
   },
   16: {
     "name": "GOES 16 ABI",
+    "sub": {
+      0: "None",
+      1: "Channel 1",
+      2: "Channel 2",
+      3: "Channel 3",
+      4: "Channel 4",
+      5: "Channel 5",
+      6: "Channel 6",
+      7: "Channel 7",
+      8: "Channel 8",
+      9: "Channel 9",
+      10: "Channel 10",
+      11: "Channel 11",
+      12: "Channel 12",
+      13: "Channel 13",
+      14: "Channel 14",
+      15: "Channel 15",
+      16: "Channel 16",
+    }
+  },
+  17: {
+    "name": "GOES 17 ABI",
     "sub": {
       0: "None",
       1: "Channel 1",
@@ -272,8 +295,11 @@ def getHeaderData(data):
     size = struct.unpack(">H", data[1:3])[0]
     o = data[3:size]
     data = data[size:]
-    td = parseHeader(type, o)
-    headers.append(td)
+    try:
+      td = parseHeader(type, o)
+      headers.append(td)
+    except Exception, e:
+      print("Cannot parse header %s: %s" %(type, e))
     if td["type"] == 0:
       data = data[:td["headerlength"]-size]
   return headers
@@ -308,6 +334,15 @@ def parseHeader(type, data):
 
   elif type == 7:
     return {"type":type, "data":data}
+
+  elif type == 9:
+    parts = data.split("\x00")
+    name = None
+    for i in parts:
+      if len(i) > 0 and i[0] == "\x1F":
+        name = i[1:]
+        break
+    return {"type":type, "data":data, "name": name}
 
   elif type == 128:
     imageid, sequence, startcol, startline, maxseg, maxcol, maxrow = struct.unpack(">7H", data)
@@ -365,6 +400,15 @@ def readHeader(f):
 
   elif type == 7:
     return type, data
+
+  elif type == 9:
+    parts = data.split("\x00")
+    name = None
+    for i in parts:
+      if len(i) > 0 and i[0] == "\x1F":
+        name = i[1:]
+        break
+    return type, name, data
 
   elif type == 128:
     imageid, sequence, startcol, startline, maxseg, maxcol, maxrow = struct.unpack(">7H", data)
@@ -444,6 +488,11 @@ def printHeaders(headers, showStructuredHeader=False, showImageDataRecord=False)
     elif type == 7:
       print("Key Header")
       print("   Data: %s" %head["data"])
+
+    elif type == 9:
+      print("Unknown Header might be a bug (Head9)")
+      print("   Filename: %s" %head["name"])
+      print("   Raw Data Hex: %s" %binascii.hexlify(head["data"]))
 
     elif type == 128:
       print("Segment Identification Header")
